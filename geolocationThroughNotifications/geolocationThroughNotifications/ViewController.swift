@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import MapKit
 import CoreData
 import Foundation
 import CoreLocation
@@ -14,11 +15,27 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
     let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
     let managedObjectContext: NSManagedObjectContext! = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     let locationManager = CLLocationManager()
-    var currentLocation             : CLLocation!
+    var currentLocation                 : CLLocation!
+    @IBOutlet var map                   :MKMapView!
+    
+    func placeAnnotations() {
+        var locs = fetchLocations()
+        for loc in locs{
+            var annot = MKPointAnnotation()
+            annot.coordinate = CLLocationCoordinate2DMake(NSString(string: loc.lat!).doubleValue, NSString(string: loc.lon!).doubleValue)
+            annot.title = loc.name
+            print(annot.coordinate)
+            map.addAnnotation(annot)
+        }
+    }
+    
+    
     enum UIUserNotificationActionBehavior : UInt {
         case Default // the default action behavior
         case TextInput // system provided action behavior, allows text input from the user
     }
+    
+    
     
     func requestPermissionAndRegisterNotifications () {
         let textAction = UIMutableUserNotificationAction()
@@ -52,6 +69,8 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         reminder.category = "CATEGORY_ID"
         
         UIApplication.sharedApplication().scheduleLocalNotification(reminder)
+        UIApplication.sharedApplication().scheduleLocalNotification(reminder)
+        UIApplication.sharedApplication().scheduleLocalNotification(reminder)
         
         //        let optionReminder = UILocalNotification()
         //        optionReminder.fireDate = date
@@ -70,36 +89,46 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
     }
     func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         print("updated")
-        print(locationManager.location)
         currentLocation = locations[0]
+        print(currentLocation)
     }
     func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
         print("error")
         currentLocation = locationManager.location
-        print(currentLocation)
     }
     
     func gotNote(){
         print("GOT IN VC")
         locationManager.requestLocation()
-        print(currentLocation)
         CLGeocoder().reverseGeocodeLocation(currentLocation) { (placemark, error) -> Void in
             if (error != nil) {
                 print ("error")
             }
             else {
-                print (placemark?.first?.name)
-                print (placemark?.first?.addressDictionary)
-                print (placemark?.first?.location)
+                let entityDescription : NSEntityDescription! = NSEntityDescription.entityForName("ResponseLocation", inManagedObjectContext: self.managedObjectContext)
+                var newLocation = ResponseLocation(entity: entityDescription, insertIntoManagedObjectContext: self.managedObjectContext)
+                newLocation.name = placemark?.first?.name
+                newLocation.lat = placemark?.first?.location?.coordinate.latitude.description
+                newLocation.lon = placemark?.first?.location?.coordinate.longitude.description
+                self.appDelegate.saveContext()
+                self.fetchLocations()
             }
         }
     }
-
+    func fetchLocations ()->[ResponseLocation] {
+        let fetchRequest :NSFetchRequest = NSFetchRequest(entityName: "ResponseLocation")
+        let locations = try! self.managedObjectContext!.executeFetchRequest(fetchRequest) as! [ResponseLocation]
+        //return tempSettings[0]
+        print(locations.count)
+        return locations
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         findMyLocation()
         requestPermissionAndRegisterNotifications()
         manuallyScheduleNotifications()
+        placeAnnotations()
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "gotNote", name: "gotNoteAppD", object: nil)
         // Do any additional setup after loading the view, typically from a nib.
     }

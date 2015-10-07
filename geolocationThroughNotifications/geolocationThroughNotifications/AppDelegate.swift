@@ -109,12 +109,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func application(application: UIApplication, handleActionWithIdentifier identifier: String?, forLocalNotification notification: UILocalNotification, withResponseInfo responseInfo: [NSObject : AnyObject], completionHandler: () -> Void) {
         print("Recived Local Notification")
-        print(notification.alertBody)
         
         if identifier == "TEXT_ACTION" {
             let reply = responseInfo[UIUserNotificationActionResponseTypedTextKey]
             //myString = reply as! NSString
-            print("RESPONSE: ")//\(reply)")
             NSNotificationCenter.defaultCenter().postNotificationName("gotNoteAppD", object: nil)
         } else {
             print("We have nothing")

@@ -45,7 +45,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         let now: NSDateComponents = NSCalendar.currentCalendar().components([.Hour, .Minute], fromDate: NSDate())
         
         let reminder = UILocalNotification()
-        reminder.fireDate = NSDate(timeIntervalSinceNow: 20)
+        reminder.fireDate = NSDate(timeIntervalSinceNow: 2)
         reminder.alertBody = "What is on your mind?"
         reminder.alertAction = "Reply"
         //reminder.soundName = "sound.aif"
@@ -66,22 +66,31 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
+        locationManager.requestLocation()
     }
     func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        print("updated")
+        print(locationManager.location)
         currentLocation = locations[0]
     }
-    
+    func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
+        print("error")
+        currentLocation = locationManager.location
+        print(currentLocation)
+    }
     
     func gotNote(){
         print("GOT IN VC")
+        locationManager.requestLocation()
         print(currentLocation)
         CLGeocoder().reverseGeocodeLocation(currentLocation) { (placemark, error) -> Void in
             if (error != nil) {
                 print ("error")
             }
             else {
-                print (placemark)
+                print (placemark?.first?.name)
+                print (placemark?.first?.addressDictionary)
+                print (placemark?.first?.location)
             }
         }
     }
